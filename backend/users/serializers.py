@@ -17,21 +17,11 @@ class UserSerializer(DjoserUserSerializer):
 
     class Meta:
         model = User
-        fields = ["pk", "email", "first_name", "last_name", "patronymic_name", "date_of_birth"]
+        fields = ["pk", "email", "name", "gender", "city", "date_of_birth"]
 
-    def validate_first_name(self, value):
+    def validate_name(self, value):
         if not is_russian(value):
             raise serializers.ValidationError("Имя должно состоять только из русских букв")
-        return value
-
-    def validate_last_name(self, value):
-        if not is_russian(value):
-            raise serializers.ValidationError("Фамилия должна состоять только из русских букв")
-        return value
-
-    def validate_patronymic_name(self, value):
-        if not is_russian(value):
-            raise serializers.ValidationError("Отчество должно состоять только из русских букв")
         return value
 
     def validate_date_of_birth(self, value):
@@ -57,26 +47,16 @@ class UserCreateSerializer(DjoserUserCreateSerializer):
             "email",
             "password",
             "re_password",
-            "first_name",
-            "last_name",
-            "patronymic_name",
+            "name",
+            "gender",
+            "city",
             "date_of_birth",
         )
-        extra_kwargs = {"patronymic_name": {"required": False}}
+        extra_kwargs = {"gender": {"required": False}}
 
-    def validate_first_name(self, value):
+    def validate_name(self, value):
         if not is_russian(value):
             raise serializers.ValidationError("Имя должно состоять только из русских букв")
-        return value
-
-    def validate_last_name(self, value):
-        if not is_russian(value):
-            raise serializers.ValidationError("Фамилия должна состоять только из русских букв")
-        return value
-
-    def validate_patronymic_name(self, value):
-        if not is_russian(value):
-            raise serializers.ValidationError("Отчество должно состоять только из русских букв")
         return value
 
     def validate_date_of_birth(self, value):
@@ -92,7 +72,7 @@ class ShortReadUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("id", "first_name", "last_name", "post", "email")
+        fields = ("id", "name", "email")
 
 
 class UserDeleteSerializer(serializers.Serializer):

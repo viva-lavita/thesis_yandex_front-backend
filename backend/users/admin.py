@@ -9,17 +9,18 @@ admin.site.unregister(Group)
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
-    list_display = ("id", "email", "is_staff", "is_active", "created_at", "updated_at")
-    search_fields = ("email", "first_name", "last_name")
-    list_filter = ("is_staff", "is_active")
+    list_display = ("id", "email", "is_staff", "created_at", "updated_at")
+    search_fields = ("email", "name")
+    list_filter = ("is_staff", "gender")
     readonly_fields = ("created_at", "updated_at")
     show_facets = admin.ShowFacets.ALWAYS
     ordering = ("email",)
     filter_horizontal = ("user_permissions",)
+    date_hierarchy = "created_at"
 
     fieldsets = (
-        (None, {"fields": ("email", "password", "post")}),
-        ("Персональная информация", {"fields": ("first_name", "last_name")}),
+        (None, {"fields": ("email", "password")}),
+        ("Персональная информация", {"fields": ("name", "city", "date_of_birth", "gender")}),
         (
             "Права доступа",
             {

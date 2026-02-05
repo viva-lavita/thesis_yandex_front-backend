@@ -2,6 +2,22 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 
 
+class City(models.Model):
+    name = models.CharField(
+        verbose_name="Город",
+        max_length=50,
+        unique=True,
+        help_text="Не более 50 символов.",
+    )
+
+    class Meta:
+        verbose_name = "Город"
+        verbose_name_plural = "Города"
+
+    def __str__(self):
+        return self.name
+
+
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -19,31 +35,28 @@ class CustomUserManager(BaseUserManager):
 
 
 class User(AbstractUser):
-    first_name = models.CharField(
+    class Gender(models.TextChoices):
+        MALE = "male", "Мужской"
+        FEMALE = "female", "Женский"
+
+    name = models.CharField(
         verbose_name="Имя",
-        max_length=50,
+        max_length=100,
         blank=True,
         null=True,
         help_text="Не более 50 символов.",
-    )
-    last_name = models.CharField(
-        verbose_name="Фамилия",
-        max_length=50,
-        blank=True,
-        null=True,
-        help_text="Не более 50 символов.",
-    )
-    patronymic_name = models.CharField(
-        verbose_name="Отчество",
-        max_length=50,
-        blank=True,
-        null=True,
-        help_text=" более 50 символов.",
     )
     date_of_birth = models.DateField(
         blank=True,
         null=True,
         verbose_name="Дата рождения",
+    )
+    gender = models.CharField(
+        verbose_name="Пол",
+        max_length=6,
+        choices=Gender.choices,
+        blank=True,
+        null=True,
     )
     email = models.EmailField(
         verbose_name="Email",
@@ -57,12 +70,13 @@ class User(AbstractUser):
             "max_length": "Email слишком длинный.",
         },
     )
-    post = models.CharField(
-        verbose_name="Должность",
-        max_length=70,
-        blank=True,
+    city = models.ForeignKey(
+        City,
+        related_name="users",
+        verbose_name="Город",
+        on_delete=models.SET_NULL,
         null=True,
-        help_text="Не более 50 символов.",
+        blank=True,
     )
     created_at = models.DateTimeField(
         verbose_name="Дата создания",
@@ -86,6 +100,7 @@ class User(AbstractUser):
     class Meta:
         verbose_name = "Пользователь"
         verbose_name_plural = "Пользователи"
+        ordering = ["-pk"]
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name}"
+        return f"{self.name} {self.pk}"
