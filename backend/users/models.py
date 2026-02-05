@@ -34,7 +34,7 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
-class User(AbstractUser):
+class User(AbstractUser):  # TODO вынести в UserInfo все неважные поля(OneToOne)
     class Gender(models.TextChoices):
         MALE = "male", "Мужской"
         FEMALE = "female", "Женский"
