@@ -1,0 +1,61 @@
+[project]
+name = "django-template"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "django>=5.2",
+    "django-cors-headers>=4.7.0",
+    "django-filter>=25.1",
+    "djangorestframework>=3.16.0",
+    "djangorestframework-simplejwt>=5.5.0",
+    "djoser>=2.3.1",
+    "drf-spectacular>=0.28.0",
+    "drf-spectacular-sidecar>=2025.4.1",
+    "gunicorn>=23.0.0",
+    "psycopg2-binary>=2.9.10",
+    "python-dotenv>=1.1.0",
+]
+
+[dependency-groups]
+dev = [
+    "django-debug-toolbar>=5.1.0",
+    "pre-commit>=4.2.0",
+    "ruff>=0.11.6",
+]
+
+
+[tool.ruff]
+line-length = 120
+namespace-packages = ["backend"]
+
+
+[tool.ruff.format]
+docstring-code-format = true
+exclude = [
+    "*.md",
+    "*.ini",
+    "*.toml",
+    "*.lock",
+]
+indent-style = "space"
+line-ending = "auto"
+
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "W191",  # indentation contains tabs
+    "B904",  # Allow raising exceptions without from e, for HTTPException
+]
