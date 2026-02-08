@@ -9,9 +9,6 @@ def custom_exception_handler(exc, context) -> Response:
     response = exception_handler(exc, context)
 
     if isinstance(exc, Http404):
-        return Response(
-            {'detail': 'The requested object was not found'},
-            status=HTTPStatus.NOT_FOUND
-        )
+        return Response({"detail": "The requested object was not found"}, status=HTTPStatus.NOT_FOUND)
 
     return response

@@ -1,27 +1,31 @@
 from django.db import transaction
 from djoser.views import UserViewSet as DjoserUserViewSet
-from drf_spectacular.utils import extend_schema, extend_schema_view, inline_serializer
-from rest_framework import permissions, serializers, status
+from rest_framework import permissions, status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 
-@extend_schema_view(
-    create=extend_schema(
-        request=inline_serializer(
-            name="InlineFormSerializer",
-            fields={
-                "email": serializers.EmailField(),
-                "password": serializers.CharField(),
-                "re_password": serializers.CharField(),
-                "name": serializers.CharField(),
-                "city": serializers.CharField(),
-                "gender": serializers.CharField(),
-                "date_of_birth": serializers.DateField(),
-            },
-        ),
-    ),
-)
+# @extend_schema_view(
+#     create=extend_schema(
+#         request=inline_serializer(
+#             name="InlineFormSerializer",
+#             fields={
+#                 "email": serializers.EmailField(),
+#                 "password": serializers.CharField(),
+#                 "re_password": serializers.CharField(),
+#                 "name": serializers.CharField(),
+#                 "city": serializers.PrimaryKeyRelatedField(queryset=City.objects.all()),
+#                 "gender": serializers.ChoiceField(choices=User.Gender.choices),
+#                 "date_of_birth": serializers.DateField(required=False),
+#                 "about": serializers.CharField(required=False),
+#                 "avatar": serializers.ImageField(required=False),
+#             },
+#         ),
+#     ),
+# )
 class UserViewSet(DjoserUserViewSet):
+    parser_classes = [MultiPartParser, FormParser]
+
     def get_permissions(self):
         if self.action == "me":
             self.permission_classes = (permissions.IsAuthenticated,)

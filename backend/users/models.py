@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 
+from users.utils import user_avatar_upload_path
+
 
 class City(models.Model):
     name = models.CharField(
@@ -70,6 +72,7 @@ class User(AbstractUser):  # TODO вынести в UserInfo все неважн
             "max_length": "Email слишком длинный.",
         },
     )
+    # Можно сделать слагом на название города
     city = models.ForeignKey(
         City,
         related_name="users",
@@ -77,6 +80,13 @@ class User(AbstractUser):  # TODO вынести в UserInfo все неважн
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+    )
+    about = models.TextField(blank=True, null=True, verbose_name="О себе")
+    avatar = models.ImageField(
+        upload_to=user_avatar_upload_path,
+        blank=True,
+        null=True,
+        verbose_name="Аватар",
     )
     created_at = models.DateTimeField(
         verbose_name="Дата создания",
@@ -103,4 +113,8 @@ class User(AbstractUser):  # TODO вынести в UserInfo все неважн
         ordering = ["-pk"]
 
     def __str__(self):
-        return f"{self.name} {self.pk}"
+        return f"Пользователь {self.pk}"
+
+    @property
+    def wants_to_learn_subcategories(self):
+        return self.wants_to_learn.select_related("subcategory").all()

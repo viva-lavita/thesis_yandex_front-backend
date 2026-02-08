@@ -11,5 +11,6 @@ router = DefaultRouter()
 urlpatterns = [
     path("", include(router.urls)),
     path("", include("users.urls")),
+    path("", include("skills.urls")),
     path("utils/health-check/", health_check, name="health-check"),
 ]
