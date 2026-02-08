@@ -117,4 +117,5 @@ class User(AbstractUser):  # TODO вынести в UserInfo все неважн
 
     @property
     def wants_to_learn_subcategories(self):
+        """Подкатегории, в которых пользователь хочет научиться."""
         return self.wants_to_learn.select_related("subcategory").all()

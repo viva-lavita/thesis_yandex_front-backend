@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import serializers
 
-from skills.models import Category, Skill, SkillImage, SubCategory, WantsToLearn
+from skills.models import Category, Skill, SkillExchangeRequest, SkillImage, SubCategory, WantsToLearn
 from skills.services import create_skill_with_images
 from users.serializers import ShortReadUserSerializer
 
@@ -104,3 +104,40 @@ class WantsToLearnSerializer(serializers.ModelSerializer):
         model = WantsToLearn
         fields = ["subcategory", "subcategory_name", "created_at"]
         read_only_fields = ["created_at"]
+
+
+class SkillExchangeRequestCreateSerializer(serializers.ModelSerializer):
+    """Сериализатор создания заявки на обмен."""
+
+    class Meta:
+        model = SkillExchangeRequest
+        fields = ["recipient"]
+
+    def validate(self, data):
+        # Запрет отправки заявки самому себе
+        if self.context["request"].user == data["recipient"]:
+            raise serializers.ValidationError("Нельзя отправить заявку самому себе.")
+        if SkillExchangeRequest.objects.filter(
+            requester=self.context["request"].user, recipient=data["recipient"]
+        ).exists():
+            raise serializers.ValidationError("Вы уже отправили заявку на обмен с этим пользователем.")
+        return data
+
+
+class SkillExchangeRequestSerializer(serializers.ModelSerializer):
+    """Сериализатор заявки на обмен."""
+
+    recipient_full_name = serializers.CharField(source="recipient.get_full_name", read_only=True)
+
+    class Meta:
+        model = SkillExchangeRequest
+        fields = [
+            "id",
+            "recipient",
+            # 'requester_full_name',
+            "recipient_full_name",
+            "status",
+            "created_at",
+            "responded_at",
+        ]
+        read_only_fields = ["created_at", "responded_at"]

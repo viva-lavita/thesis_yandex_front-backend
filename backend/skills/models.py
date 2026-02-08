@@ -95,11 +95,6 @@ class WantsToLearn(models.Model):
         return f"{self.user} хочет научиться в {self.subcategory})"
 
 
-# TODO Обмен - заявки - принятые/отклоненные
-# TODO Избранное/Лайки - ManyToMany отдельная таблица, кто, кого, дата?
-# TODO Уведомления? принял обмен, предлагает обмен, просмотрено-нет,
-
-
 class SkillExchangeRequest(models.Model):
     """
     Заявка на обмен навыками между пользователями.
@@ -150,3 +145,7 @@ class SkillExchangeRequest(models.Model):
         self.status = "cancelled"
         self.responded_at = now()
         self.save()
+
+
+# TODO Избранное/Лайки - ManyToMany отдельная таблица, кто, кого, дата?
+# TODO Уведомления? принял обмен, предлагает обмен, просмотрено-нет,

@@ -38,3 +38,11 @@ class CreateDestroyViewSet(mixins.CreateModelMixin, mixins.DestroyModelMixin, Ge
     """Миксин только для создания и удаления экземпляра."""
 
     pass
+
+
+class CreateDestroyListRetrieveViewSet(
+    mixins.CreateModelMixin, mixins.DestroyModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, GenericViewSet
+):
+    """Миксин только для создания, удаления, чтения и получения списка экземпляров."""
+
+    pass

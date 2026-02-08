@@ -1,11 +1,16 @@
-from rest_framework import permissions, viewsets
+from django.shortcuts import get_object_or_404
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.response import Response
 
-from api.mixins import CreateDestroyViewSet, DestroyViewSet
-from skills.models import Category, Skill, SubCategory, WantsToLearn
+from api.mixins import CreateDestroyListRetrieveViewSet, CreateDestroyViewSet, DestroyViewSet
+from skills.models import Category, Skill, SkillExchangeRequest, SubCategory, WantsToLearn
 from skills.serializers import (
     CategorySerializer,
     ShortSkillSerializer,
+    SkillExchangeRequestCreateSerializer,
+    SkillExchangeRequestSerializer,
     SkillImageSerializer,
     SkillSerializer,
     SubCategorySerializer,
@@ -103,3 +108,75 @@ class SkillImageViewSet(DestroyViewSet):
 
     def get_queryset(self):
         return self.queryset.filter(skill__user=self.request.user)
+
+
+class SkillExchangeRequestViewSet(CreateDestroyListRetrieveViewSet):
+    """
+    API для управления заявками на обмен навыками.
+
+    Пользователь может получить только свои отправленные и полученные заявки.
+
+    Доступно аутентифицированным пользователям.
+
+    TODO добавить фильтры для полученных и отправленных заявок
+    """
+
+    serializer_class = SkillExchangeRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Пользователь видит:
+        # - все свои отправленные заявки (`exchange_requests_sent`)
+        # - все полученные заявки (`exchange_requests_received`)
+        return SkillExchangeRequest.objects.filter(requester=self.request.user) | SkillExchangeRequest.objects.filter(
+            recipient=self.request.user
+        )
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            self.serializer_class = SkillExchangeRequestCreateSerializer
+        return super().get_serializer_class()
+
+    def perform_create(self, serializer):
+        serializer.save(requester=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        # return super().create(request, *args, **kwargs)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            SkillExchangeRequestSerializer(serializer.instance).data, status=status.HTTP_201_CREATED, headers=headers
+        )
+
+    @action(detail=True, methods=["get"])
+    def accept(self, request, pk=None):
+        """Принять заявку (только для получателя)."""
+        request_obj = get_object_or_404(SkillExchangeRequest, pk=pk)
+
+        if request_obj.recipient != request.user:
+            return Response({"error": "Вы не можете принять эту заявку."}, status=status.HTTP_403_FORBIDDEN)
+        request_obj.accept()
+        serializer = self.get_serializer(request_obj)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["get"])
+    def reject(self, request, pk=None):
+        """Отклонить заявку (только для получателя)."""
+        request_obj = get_object_or_404(SkillExchangeRequest, pk=pk)
+        if request_obj.recipient != request.user:
+            return Response({"error": "Вы не можете отклонить эту заявку."}, status=status.HTTP_403_FORBIDDEN)
+        request_obj.reject()
+        serializer = self.get_serializer(request_obj)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["get"])
+    def cancel(self, request, pk=None):
+        """Отменить заявку (только для инициатора)."""
+        request_obj = get_object_or_404(SkillExchangeRequest, pk=pk)
+        if request_obj.requester != request.user:
+            return Response({"error": "Вы не можете отменить эту заявку."}, status=status.HTTP_403_FORBIDDEN)
+        request_obj.cancel()
+        serializer = self.get_serializer(request_obj)
+        return Response(serializer.data)
