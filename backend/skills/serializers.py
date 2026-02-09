@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import serializers
 
-from skills.models import Category, Skill, SkillExchangeRequest, SkillImage, SubCategory, WantsToLearn
+from skills.models import Category, Skill, SkillExchangeRequest, SkillImage, SkillLike, SubCategory, WantsToLearn
 from skills.services import create_skill_with_images
 from users.serializers import ShortReadUserSerializer
 
@@ -91,9 +91,11 @@ class SkillSerializer(serializers.ModelSerializer):
 
 # для выдачи в списке
 class ShortSkillSerializer(serializers.ModelSerializer):
+    images = SkillImageSerializer(many=True, read_only=True)
+
     class Meta:
         model = Skill
-        fields = ["id", "name"]
+        fields = ["id", "name", "images"]
 
 
 class WantsToLearnSerializer(serializers.ModelSerializer):
@@ -134,10 +136,36 @@ class SkillExchangeRequestSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "recipient",
-            # 'requester_full_name',
             "recipient_full_name",
             "status",
             "created_at",
             "responded_at",
         ]
-        read_only_fields = ["created_at", "responded_at"]
+        read_only_fields = ["created_at", "responded_at", "status", "recipient"]
+
+
+class SkillLikeCreateSerializer(serializers.ModelSerializer):
+    skill = serializers.PrimaryKeyRelatedField(queryset=Skill.objects.all())
+
+    class Meta:
+        model = SkillLike
+        fields = ["id", "skill"]
+
+    def validate(self, attrs):
+        if SkillLike.objects.filter(user=self.context["request"].user, skill=attrs["skill"]).exists():
+            raise serializers.ValidationError("Вы уже поставили лайк на этот навык.")
+        if attrs["skill"].user == self.context["request"].user:
+            raise serializers.ValidationError("Нельзя поставить лайк на свой навык.")
+        return super().validate(attrs)
+
+
+class SkillLikeSerializer(serializers.ModelSerializer):
+    """Сериализатор лайка навыка. Только для чтения."""
+
+    skill = ShortSkillSerializer(read_only=True)
+    user = ShortReadUserSerializer(read_only=True)
+
+    class Meta:
+        model = SkillLike
+        fields = ["id", "user", "skill", "created_at"]
+        read_only_fields = ["id", "user", "skill", "created_at"]

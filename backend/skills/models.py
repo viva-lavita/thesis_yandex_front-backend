@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.forms import ValidationError
 from django.utils.timezone import now
 
 from skills.utils import skill_image_upload_path
@@ -147,5 +148,46 @@ class SkillExchangeRequest(models.Model):
         self.save()
 
 
-# TODO Избранное/Лайки - ManyToMany отдельная таблица, кто, кого, дата?
+# TODO Избранное-Лайки - ManyToMany отдельная таблица, кто, кого, дата?
 # TODO Уведомления? принял обмен, предлагает обмен, просмотрено-нет,
+
+
+class SkillLike(models.Model):
+    """
+    Модель для хранения лайков/избранных навыков пользователя.
+
+    Позволяет:
+    - отмечать навыки как «понравившиеся»;
+    - отслеживать, кто и когда поставил лайк;
+    - избегать дублирования (один пользователь — один лайк на навык).
+    """
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="liked_skills", verbose_name="Пользователь")
+    skill = models.ForeignKey(Skill, on_delete=models.CASCADE, related_name="likes", verbose_name="Навык")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата добавления в избранное")
+
+    class Meta:
+        verbose_name = "Лайк навыка"
+        verbose_name_plural = "Лайки навыков"
+        unique_together = ("user", "skill")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.user} лайкнул {self.skill}"
+
+    def save(self, *args, **kwargs):
+        if SkillLike.objects.filter(user=self.user, skill=self.skill).exists():
+            raise ValidationError("Вы уже лайкнули этот навык.")
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def toggle_like(cls, user, skill):
+        """
+        Добавить/убрать лайк. Возвращает True, если лайк добавлен, False — если удалён.
+        """
+        try:
+            cls.objects.create(user=user, skill=skill)
+            return True
+        except ValidationError:
+            cls.objects.filter(user=user, skill=skill).delete()
+            return False

@@ -5,6 +5,7 @@ from .views import (
     CategoryViewSet,
     SkillExchangeRequestViewSet,
     SkillImageViewSet,
+    SkillLikeViewSet,
     SkillViewSet,
     SubCategoryViewSet,
     WantsToLearnViewSet,
@@ -17,6 +18,7 @@ router.register(r"subcategories", SubCategoryViewSet, basename="subcategory")
 router.register(r"wants-to-learn", WantsToLearnViewSet, basename="wants-to-learn")
 router.register(r"skill-images", SkillImageViewSet, basename="skill-image")
 router.register(r"skill-exchange-requests", SkillExchangeRequestViewSet, basename="skill-exchange-request")
+router.register(r"skill-likes", SkillLikeViewSet, basename="skill-like")
 
 
 urlpatterns = [

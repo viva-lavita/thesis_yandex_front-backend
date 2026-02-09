@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils.html import format_html
 from django.utils.timezone import now
 
-from skills.models import Category, Skill, SkillExchangeRequest, SkillImage, SubCategory
+from skills.models import Category, Skill, SkillExchangeRequest, SkillImage, SkillLike, SubCategory
 
 
 @admin.register(Category)
@@ -137,3 +137,11 @@ class SkillExchangeRequestAdmin(admin.ModelAdmin):
         else:
             self.message_user(request, "Неверный статус.", level=messages.ERROR)
         return redirect("admin:skills_skillexchangerequest_changelist")
+
+
+@admin.register(SkillLike)
+class SkillLikeAdmin(admin.ModelAdmin):
+    list_display = ["user", "skill", "created_at"]
+    search_fields = ["user__username", "skill__name"]
+    raw_id_fields = ["user", "skill"]  # Для удобной выборки в админке
+    date_hierarchy = "created_at"

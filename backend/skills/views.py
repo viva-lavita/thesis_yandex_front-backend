@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
@@ -5,13 +6,15 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from api.mixins import CreateDestroyListRetrieveViewSet, CreateDestroyViewSet, DestroyViewSet
-from skills.models import Category, Skill, SkillExchangeRequest, SubCategory, WantsToLearn
+from skills.models import Category, Skill, SkillExchangeRequest, SkillLike, SubCategory, WantsToLearn
 from skills.serializers import (
     CategorySerializer,
     ShortSkillSerializer,
     SkillExchangeRequestCreateSerializer,
     SkillExchangeRequestSerializer,
     SkillImageSerializer,
+    SkillLikeCreateSerializer,
+    SkillLikeSerializer,
     SkillSerializer,
     SubCategorySerializer,
     WantsToLearnSerializer,
@@ -125,12 +128,7 @@ class SkillExchangeRequestViewSet(CreateDestroyListRetrieveViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # Пользователь видит:
-        # - все свои отправленные заявки (`exchange_requests_sent`)
-        # - все полученные заявки (`exchange_requests_received`)
-        return SkillExchangeRequest.objects.filter(requester=self.request.user) | SkillExchangeRequest.objects.filter(
-            recipient=self.request.user
-        )
+        return SkillExchangeRequest.objects.filter(Q(requester=self.request.user) | Q(recipient=self.request.user))
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -150,7 +148,7 @@ class SkillExchangeRequestViewSet(CreateDestroyListRetrieveViewSet):
             SkillExchangeRequestSerializer(serializer.instance).data, status=status.HTTP_201_CREATED, headers=headers
         )
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=["post"])
     def accept(self, request, pk=None):
         """Принять заявку (только для получателя)."""
         request_obj = get_object_or_404(SkillExchangeRequest, pk=pk)
@@ -161,7 +159,7 @@ class SkillExchangeRequestViewSet(CreateDestroyListRetrieveViewSet):
         serializer = self.get_serializer(request_obj)
         return Response(serializer.data)
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=["post"])
     def reject(self, request, pk=None):
         """Отклонить заявку (только для получателя)."""
         request_obj = get_object_or_404(SkillExchangeRequest, pk=pk)
@@ -171,7 +169,7 @@ class SkillExchangeRequestViewSet(CreateDestroyListRetrieveViewSet):
         serializer = self.get_serializer(request_obj)
         return Response(serializer.data)
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
         """Отменить заявку (только для инициатора)."""
         request_obj = get_object_or_404(SkillExchangeRequest, pk=pk)
@@ -180,3 +178,25 @@ class SkillExchangeRequestViewSet(CreateDestroyListRetrieveViewSet):
         request_obj.cancel()
         serializer = self.get_serializer(request_obj)
         return Response(serializer.data)
+
+
+class SkillLikeViewSet(CreateDestroyListRetrieveViewSet):
+    """
+    API для управления лайками навыков.
+
+    Доступно аутентифицированным пользователям.
+    """
+
+    queryset = SkillLike.objects.all()
+    serializer_class = SkillLikeSerializer
+
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user).select_related("skill", "user")
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            self.serializer_class = SkillLikeCreateSerializer
+        return super().get_serializer_class()
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
