@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 
@@ -119,3 +121,18 @@ class User(AbstractUser):  # TODO вынести в UserInfo все неважн
     def wants_to_learn_subcategories(self):
         """Подкатегории, в которых пользователь хочет научиться."""
         return self.wants_to_learn.select_related("subcategory").all()
+
+    def get_age(self) -> int | None:
+        """
+        Возвращает возраст пользователя в полных годах.
+
+        Если дата рождения не указана — возвращает None.
+        """
+        if not self.date_of_birth:
+            return None
+        today = date.today()
+        birth_date = self.date_of_birth
+        age = today.year - birth_date.year
+        if today.month < birth_date.month or (today.month == birth_date.month and today.day < birth_date.day):
+            age -= 1
+        return age

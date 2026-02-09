@@ -12,6 +12,7 @@ class Category(models.Model):
     """Категория навыка"""
 
     name = models.CharField(max_length=50, unique=True, verbose_name="Название категории")
+    color = models.CharField(max_length=50, unique=True, default="#42CAD1", verbose_name="Цвет категории")
 
     class Meta:
         verbose_name = "Категория навыка"

@@ -189,3 +189,23 @@ class SkillExchangeNotificationSerializer(serializers.ModelSerializer):
         model = SkillExchangeNotification
         fields = ["id", "request_id", "requester_name", "recipient_name", "event_type", "is_read", "created_at"]
         read_only_fields = ["created_at", "request_id", "requester_name", "recipient_name", "event_type", "is_read"]
+
+
+class UserFullSerializer(ShortReadUserSerializer):
+    skills = ShortSkillSerializer(many=True, read_only=True)
+    wants_to_learn = WantsToLearnSerializer(many=True, read_only=True)
+    age = serializers.SerializerMethodField()
+    city_name = serializers.CharField(source="city.name", read_only=True)
+    is_liked = serializers.SerializerMethodField()
+    likes_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ("id", "name", "city_name", "gender", "avatar", "skills", "wants_to_learn", "age")
+
+    def get_age(self, obj):
+        if obj.date_of_birth:
+            return obj.get_age()
+        return None
+
+    # def get_is_liked(self, obj):

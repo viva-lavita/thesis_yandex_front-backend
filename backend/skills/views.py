@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from rest_framework import permissions, status, viewsets
@@ -26,8 +27,11 @@ from skills.serializers import (
     SkillLikeSerializer,
     SkillSerializer,
     SubCategorySerializer,
+    UserFullSerializer,
     WantsToLearnSerializer,
 )
+
+User = get_user_model()
 
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -88,6 +92,19 @@ class SkillViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=["get"], url_path="main_page", permission_classes=[permissions.AllowAny])
+    def main_page(self, request, *args, **kwargs):
+        """
+        Получение списка пользователей для главной страницы.
+
+        Доступ: все пользователи
+
+        В выдаче только активные пользователи (is_active=True).
+        В выдаче нет админов (!is_superuser=True).
+        """
+        users = User.objects.filter(is_active=True, is_superuser=False)
+        return Response(UserFullSerializer(users, many=True).data)
 
 
 class WantsToLearnViewSet(CreateDestroyViewSet):
