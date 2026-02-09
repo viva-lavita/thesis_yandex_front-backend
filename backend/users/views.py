@@ -1,28 +1,22 @@
+import json
+import re
+
 from django.db import transaction
 from djoser.views import UserViewSet as DjoserUserViewSet
-from rest_framework import permissions, status
+from rest_framework import permissions, status, viewsets
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
+from skills.models import WantsToLearn
+from users.models import City
+from users.serializers import CitySerializer, UserCreateSerializer
 
-# @extend_schema_view(
-#     create=extend_schema(
-#         request=inline_serializer(
-#             name="InlineFormSerializer",
-#             fields={
-#                 "email": serializers.EmailField(),
-#                 "password": serializers.CharField(),
-#                 "re_password": serializers.CharField(),
-#                 "name": serializers.CharField(),
-#                 "city": serializers.PrimaryKeyRelatedField(queryset=City.objects.all()),
-#                 "gender": serializers.ChoiceField(choices=User.Gender.choices),
-#                 "date_of_birth": serializers.DateField(required=False),
-#                 "about": serializers.CharField(required=False),
-#                 "avatar": serializers.ImageField(required=False),
-#             },
-#         ),
-#     ),
-# )
+
+class CityViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = City.objects.all()
+    serializer_class = CitySerializer
+
+
 class UserViewSet(DjoserUserViewSet):
     parser_classes = [MultiPartParser, FormParser]
 
@@ -51,10 +45,20 @@ class UserViewSet(DjoserUserViewSet):
 
     def create(self, request, *args, **kwargs):
         """Доступ только для неавторизованных пользователей."""
-        serializer = self.get_serializer(data=request.data)
+        serializer = UserCreateSerializer(data=request.data)
+        wants_to_learn_data = request.data.get("wants_to_learn", None)
         with transaction.atomic():
-            if serializer.is_valid():
+            if serializer.is_valid(raise_exception=True):
                 self.perform_create(serializer)
+                if wants_to_learn_data:
+                    if isinstance(wants_to_learn_data, str):
+                        cleaned = re.sub(r"\s+", "", wants_to_learn_data)
+                        if not cleaned.startswith("["):
+                            cleaned = f"[{cleaned}]"
+                        wants_to_learn_data = json.loads(cleaned)
+                    for want in wants_to_learn_data:
+                        # TODO добавить проверку id субкатегорий на существование
+                        WantsToLearn(user=serializer.instance, subcategory_id=want["subcategory"]).save()
                 headers = self.get_success_headers(serializer.data)
                 return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
             else:

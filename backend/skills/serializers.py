@@ -13,7 +13,7 @@ from skills.models import (
     WantsToLearn,
 )
 from skills.services import create_skill_with_images
-from users.serializers import ShortReadUserSerializer
+from users.serializers import CitySerializer, ShortReadUserSerializer
 
 User = get_user_model()
 
@@ -101,10 +101,11 @@ class SkillSerializer(serializers.ModelSerializer):
 # для выдачи в списке
 class ShortSkillSerializer(serializers.ModelSerializer):
     images = SkillImageSerializer(many=True, read_only=True)
+    subcategory = SubCategorySerializer(read_only=True)
 
     class Meta:
         model = Skill
-        fields = ["id", "name", "images"]
+        fields = ["id", "name", "images", "subcategory"]
 
 
 class WantsToLearnSerializer(serializers.ModelSerializer):
@@ -114,7 +115,7 @@ class WantsToLearnSerializer(serializers.ModelSerializer):
     class Meta:
         model = WantsToLearn
         fields = ["subcategory", "subcategory_name", "created_at"]
-        read_only_fields = ["created_at"]
+        read_only_fields = ["created_at", "subcategory_name"]
 
 
 class SkillExchangeRequestCreateSerializer(serializers.ModelSerializer):
@@ -195,17 +196,32 @@ class UserFullSerializer(ShortReadUserSerializer):
     skills = ShortSkillSerializer(many=True, read_only=True)
     wants_to_learn = WantsToLearnSerializer(many=True, read_only=True)
     age = serializers.SerializerMethodField()
-    city_name = serializers.CharField(source="city.name", read_only=True)
     is_liked = serializers.SerializerMethodField()
     likes_count = serializers.SerializerMethodField()
+    city = CitySerializer(read_only=True)
 
     class Meta:
         model = User
-        fields = ("id", "name", "city_name", "gender", "avatar", "skills", "wants_to_learn", "age")
+        fields = (
+            "id",
+            "name",
+            "city",
+            "gender",
+            "avatar",
+            "skills",
+            "wants_to_learn",
+            "age",
+            "is_liked",
+            "likes_count",
+        )
 
     def get_age(self, obj):
         if obj.date_of_birth:
             return obj.get_age()
         return None
 
-    # def get_is_liked(self, obj):
+    def get_is_liked(self, obj):
+        return SkillLike.objects.filter(user=self.context["request"].user, skill__user=obj).exists()
+
+    def get_likes_count(self, obj):
+        return SkillLike.objects.filter(skill__user=obj).count()

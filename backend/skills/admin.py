@@ -13,6 +13,7 @@ from skills.models import (
     SkillImage,
     SkillLike,
     SubCategory,
+    WantsToLearn,
 )
 
 
@@ -193,3 +194,9 @@ class SkillExchangeNotificationAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         extra_context["title"] = "Уведомления об обмене навыками"
         return super().changelist_view(request, extra_context)
+
+
+@admin.register(WantsToLearn)
+class WantsToLearnAdmin(admin.ModelAdmin):
+    list_display = ["id", "user", "subcategory", "created_at"]
+    search_fields = ["user__username", "subcategory__name"]

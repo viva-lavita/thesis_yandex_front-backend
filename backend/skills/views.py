@@ -103,8 +103,19 @@ class SkillViewSet(viewsets.ModelViewSet):
         В выдаче только активные пользователи (is_active=True).
         В выдаче нет админов (!is_superuser=True).
         """
-        users = User.objects.filter(is_active=True, is_superuser=False)
-        return Response(UserFullSerializer(users, many=True).data)
+        users = (
+            User.objects.filter(is_active=True, is_superuser=False)
+            .select_related("city")
+            .prefetch_related(
+                "skills",
+                "skills__subcategory",
+                "skills__subcategory__category",
+                "skills__images",
+            )
+        )
+
+        data = UserFullSerializer(users, many=True, context={"request": request}).data
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class WantsToLearnViewSet(CreateDestroyViewSet):

@@ -4,9 +4,16 @@ from djoser.serializers import UserSerializer as DjoserUserSerializer
 from rest_framework import serializers
 
 from api.utils import is_russian
+from skills.models import SubCategory
 from users.models import City
 
 User = get_user_model()
+
+
+class CitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = City
+        fields = ["id", "name"]
 
 
 class UserSerializer(DjoserUserSerializer):
@@ -32,6 +39,11 @@ class UserSerializer(DjoserUserSerializer):
 
 
 # TODO: при патчах и путах провалидировать, что имя, гендер, дата рождения и город не обнуляются(в бд можно null)
+class CustomSubCategorySerializer(serializers.Serializer):
+    subcategory = subcategory = serializers.PrimaryKeyRelatedField(queryset=SubCategory.objects.all())
+
+    class Meta:
+        fields = ["subcategory"]
 
 
 class UserCreateSerializer(DjoserUserCreateSerializer):
@@ -43,6 +55,7 @@ class UserCreateSerializer(DjoserUserCreateSerializer):
     re_password = serializers.CharField(write_only=True)
     city = serializers.PrimaryKeyRelatedField(queryset=City.objects.all(), write_only=True)
     gender = serializers.ChoiceField(choices=User.Gender.choices, write_only=True)
+    wants_to_learn = CustomSubCategorySerializer(many=True, write_only=True, required=False)
 
     class Meta:
         model = User
@@ -57,6 +70,7 @@ class UserCreateSerializer(DjoserUserCreateSerializer):
             "date_of_birth",
             "about",
             "avatar",
+            "wants_to_learn",
         )
         extra_kwargs = {
             "about": {"required": False},
@@ -65,6 +79,7 @@ class UserCreateSerializer(DjoserUserCreateSerializer):
             "date_of_birth": {"required": True},
             "gender": {"required": True},
             "city": {"required": True},
+            "wants_to_learn": {"required": False},
         }
 
     def validate_name(self, value):
@@ -78,6 +93,27 @@ class UserCreateSerializer(DjoserUserCreateSerializer):
         if self.instance and self.instance.date_of_birth and value > self.instance.date_of_birth:
             raise serializers.ValidationError("Дата рождения должна быть раньше даты регистрации")
         return value
+
+    # def validate_wants_to_learn(self, value):
+    #     if isinstance(value, str):
+    #         try:
+    #             data = json.loads(value)
+    #             # Проверяем, что это список
+    #             if not isinstance(data, list):
+    #                 raise serializers.ValidationError("wants_to_learn должен быть списком")
+    #             return data
+    #         except json.JSONDecodeError:
+    #             raise serializers.ValidationError("Некорректный JSON в wants_to_learn")
+    #     return value  # если уже список (например, из теста)
+
+    # def validate(self, attrs):
+    #     print(attrs)
+    #     # wants_to_learn = attrs.pop("wants_to_learn")
+    #     wants_to_learn = attrs.pop("wants_to_learn", None)
+    #     if wants_to_learn:
+    #         for want in wants_to_learn:
+    #             WantsToLearn(user=self.instance, subcategory=want["subcategory"]).save()
+    #     return super().validate(attrs)
 
 
 class ShortReadUserSerializer(serializers.ModelSerializer):
