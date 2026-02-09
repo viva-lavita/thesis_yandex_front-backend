@@ -5,7 +5,15 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils.html import format_html
 from django.utils.timezone import now
 
-from skills.models import Category, Skill, SkillExchangeRequest, SkillImage, SkillLike, SubCategory
+from skills.models import (
+    Category,
+    Skill,
+    SkillExchangeNotification,
+    SkillExchangeRequest,
+    SkillImage,
+    SkillLike,
+    SubCategory,
+)
 
 
 @admin.register(Category)
@@ -145,3 +153,43 @@ class SkillLikeAdmin(admin.ModelAdmin):
     search_fields = ["user__username", "skill__name"]
     raw_id_fields = ["user", "skill"]  # Для удобной выборки в админке
     date_hierarchy = "created_at"
+
+
+@admin.register(SkillExchangeNotification)
+class SkillExchangeNotificationAdmin(admin.ModelAdmin):
+    """
+    Админ-панель для уведомлений об обмене навыками.
+    """
+
+    list_display = [
+        "id",
+        "request__id",
+        "recipient",
+        "event_type",
+        "is_read",
+        "created_at",
+    ]
+    list_filter = [
+        "event_type",
+        "is_read",
+    ]
+    search_fields = [
+        "recipient__username",
+        "recipient__first_name",
+        "recipient__last_name",
+    ]
+
+    # Поля, доступные для редактирования на странице списка
+    date_hierarchy = "created_at"
+    list_per_page = 20
+    readonly_fields = ["created_at"]
+    ordering = ["-created_at"]
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related("request", "recipient")
+
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context["title"] = "Уведомления об обмене навыками"
+        return super().changelist_view(request, extra_context)

@@ -2,7 +2,16 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import serializers
 
-from skills.models import Category, Skill, SkillExchangeRequest, SkillImage, SkillLike, SubCategory, WantsToLearn
+from skills.models import (
+    Category,
+    Skill,
+    SkillExchangeNotification,
+    SkillExchangeRequest,
+    SkillImage,
+    SkillLike,
+    SubCategory,
+    WantsToLearn,
+)
 from skills.services import create_skill_with_images
 from users.serializers import ShortReadUserSerializer
 
@@ -169,3 +178,14 @@ class SkillLikeSerializer(serializers.ModelSerializer):
         model = SkillLike
         fields = ["id", "user", "skill", "created_at"]
         read_only_fields = ["id", "user", "skill", "created_at"]
+
+
+class SkillExchangeNotificationSerializer(serializers.ModelSerializer):
+    request_id = serializers.IntegerField(source="request.id", read_only=True)
+    requester_name = serializers.CharField(source="request.requester.get_full_name", read_only=True)
+    recipient_name = serializers.CharField(source="request.recipient.get_full_name", read_only=True)
+
+    class Meta:
+        model = SkillExchangeNotification
+        fields = ["id", "request_id", "requester_name", "recipient_name", "event_type", "is_read", "created_at"]
+        read_only_fields = ["created_at", "request_id", "requester_name", "recipient_name", "event_type", "is_read"]

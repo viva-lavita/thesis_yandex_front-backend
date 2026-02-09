@@ -6,10 +6,19 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from api.mixins import CreateDestroyListRetrieveViewSet, CreateDestroyViewSet, DestroyViewSet
-from skills.models import Category, Skill, SkillExchangeRequest, SkillLike, SubCategory, WantsToLearn
+from skills.models import (
+    Category,
+    Skill,
+    SkillExchangeNotification,
+    SkillExchangeRequest,
+    SkillLike,
+    SubCategory,
+    WantsToLearn,
+)
 from skills.serializers import (
     CategorySerializer,
     ShortSkillSerializer,
+    SkillExchangeNotificationSerializer,
     SkillExchangeRequestCreateSerializer,
     SkillExchangeRequestSerializer,
     SkillImageSerializer,
@@ -139,7 +148,6 @@ class SkillExchangeRequestViewSet(CreateDestroyListRetrieveViewSet):
         serializer.save(requester=self.request.user)
 
     def create(self, request, *args, **kwargs):
-        # return super().create(request, *args, **kwargs)
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -200,3 +208,36 @@ class SkillLikeViewSet(CreateDestroyListRetrieveViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+
+class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    API для просмотра уведомлений.
+
+    - Список уведомлений текущего пользователя.
+    - Пометка уведомления как прочитанного.
+    - Массовая пометка как прочитанное.
+    """
+
+    serializer_class = SkillExchangeNotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return SkillExchangeNotification.objects.filter(recipient=self.request.user).select_related(
+            "request", "request__requester", "request__recipient"
+        )
+
+    @action(detail=True, methods=["post"], url_path="mark-read")
+    def mark_read(self, request, pk=None):
+        """Пометить уведомление как прочитанное."""
+        notification = self.get_object()
+        notification.is_read = True
+        notification.save()
+        serializer = self.get_serializer(notification)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post"], url_path="mark-all-read")
+    def mark_all_read(self, request):
+        """Пометить все уведомления как прочитанные."""
+        self.get_queryset().update(is_read=True)
+        return Response({"detail": "Все уведомления отмечены как прочитанные."}, status=status.HTTP_200_OK)

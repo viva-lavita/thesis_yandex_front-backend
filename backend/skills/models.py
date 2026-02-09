@@ -148,10 +148,6 @@ class SkillExchangeRequest(models.Model):
         self.save()
 
 
-# TODO Избранное-Лайки - ManyToMany отдельная таблица, кто, кого, дата?
-# TODO Уведомления? принял обмен, предлагает обмен, просмотрено-нет,
-
-
 class SkillLike(models.Model):
     """
     Модель для хранения лайков/избранных навыков пользователя.
@@ -191,3 +187,37 @@ class SkillLike(models.Model):
         except ValidationError:
             cls.objects.filter(user=user, skill=skill).delete()
             return False
+
+
+class SkillExchangeNotification(models.Model):
+    """
+    Уведомление о событиях, связанных с заявками на обмен навыками.
+
+    События:
+    - Новая заявка (отправитель → получатель)
+    - Заявка принята (получатель → отправитель)
+    - Заявка отклонена (получатель → отправитель)
+    - Заявка отменена (отправитель → получатель)
+    """
+
+    request = models.ForeignKey(
+        SkillExchangeRequest, on_delete=models.CASCADE, related_name="notifications", verbose_name="Заявка"
+    )
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Получатель уведомления")
+    EVENT_CHOICES = [
+        ("new_request", "Новая заявка на обмен"),
+        ("accepted", "Заявка принята"),
+        ("rejected", "Заявка отклонена"),
+        ("cancelled", "Заявка отменена"),
+    ]
+    event_type = models.CharField(max_length=20, choices=EVENT_CHOICES, verbose_name="Тип события")
+    is_read = models.BooleanField(default=False, verbose_name="Прочитано")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+
+    class Meta:
+        verbose_name = "Уведомление об обмене навыками"
+        verbose_name_plural = "Уведомления об обмене навыками"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.event_type} для {self.recipient}"

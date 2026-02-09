@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     CategoryViewSet,
+    NotificationViewSet,
     SkillExchangeRequestViewSet,
     SkillImageViewSet,
     SkillLikeViewSet,
@@ -19,6 +20,7 @@ router.register(r"wants-to-learn", WantsToLearnViewSet, basename="wants-to-learn
 router.register(r"skill-images", SkillImageViewSet, basename="skill-image")
 router.register(r"skill-exchange-requests", SkillExchangeRequestViewSet, basename="skill-exchange-request")
 router.register(r"skill-likes", SkillLikeViewSet, basename="skill-like")
+router.register(r"notifications", NotificationViewSet, basename="notification")
 
 
 urlpatterns = [
