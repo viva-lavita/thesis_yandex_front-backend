@@ -1,27 +1,36 @@
+import json
+import re
+
 from django.db import transaction
 from djoser.views import UserViewSet as DjoserUserViewSet
-from drf_spectacular.utils import extend_schema, extend_schema_view, inline_serializer
-from rest_framework import permissions, serializers, status
+from rest_framework import permissions, status, viewsets
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
+from skills.models import WantsToLearn
+from users.models import City
+from users.serializers import CityListSerializer, CitySerializer, UserCreateSerializer
 
-@extend_schema_view(
-    create=extend_schema(
-        request=inline_serializer(
-            name="InlineFormSerializer",
-            fields={
-                "email": serializers.EmailField(),
-                "password": serializers.CharField(),
-                "re_password": serializers.CharField(),
-                "name": serializers.CharField(),
-                "city": serializers.CharField(),
-                "gender": serializers.CharField(),
-                "date_of_birth": serializers.DateField(),
-            },
-        ),
-    ),
-)
+
+class CityViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = City.objects.all()
+    serializer_class = CitySerializer
+    pagination_class = None
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            self.serializer_class = CityListSerializer
+        return super().get_serializer_class()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer({"cities": queryset})
+        return Response(serializer.data)
+
+
 class UserViewSet(DjoserUserViewSet):
+    parser_classes = [MultiPartParser, FormParser]
+
     def get_permissions(self):
         if self.action == "me":
             self.permission_classes = (permissions.IsAuthenticated,)
@@ -47,10 +56,20 @@ class UserViewSet(DjoserUserViewSet):
 
     def create(self, request, *args, **kwargs):
         """Доступ только для неавторизованных пользователей."""
-        serializer = self.get_serializer(data=request.data)
+        serializer = UserCreateSerializer(data=request.data)
+        wants_to_learn_data = request.data.get("wants_to_learn", None)
         with transaction.atomic():
-            if serializer.is_valid():
+            if serializer.is_valid(raise_exception=True):
                 self.perform_create(serializer)
+                if wants_to_learn_data:
+                    if isinstance(wants_to_learn_data, str):
+                        cleaned = re.sub(r"\s+", "", wants_to_learn_data)
+                        if not cleaned.startswith("["):
+                            cleaned = f"[{cleaned}]"
+                        wants_to_learn_data = json.loads(cleaned)
+                    for want in wants_to_learn_data:
+                        # TODO добавить проверку id субкатегорий на существование
+                        WantsToLearn(user=serializer.instance, subcategory_id=want["subcategory"]).save()
                 headers = self.get_success_headers(serializer.data)
                 return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
             else:

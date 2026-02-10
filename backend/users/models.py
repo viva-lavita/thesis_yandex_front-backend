@@ -1,5 +1,9 @@
+from datetime import date
+
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+
+from users.utils import user_avatar_upload_path
 
 
 class City(models.Model):
@@ -34,7 +38,7 @@ class CustomUserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
-class User(AbstractUser):
+class User(AbstractUser):  # TODO вынести в UserInfo все неважные поля(OneToOne)
     class Gender(models.TextChoices):
         MALE = "male", "Мужской"
         FEMALE = "female", "Женский"
@@ -70,6 +74,7 @@ class User(AbstractUser):
             "max_length": "Email слишком длинный.",
         },
     )
+    # Можно сделать слагом на название города
     city = models.ForeignKey(
         City,
         related_name="users",
@@ -77,6 +82,13 @@ class User(AbstractUser):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+    )
+    about = models.TextField(blank=True, null=True, verbose_name="О себе")
+    avatar = models.ImageField(
+        upload_to=user_avatar_upload_path,
+        blank=True,
+        null=True,
+        verbose_name="Аватар",
     )
     created_at = models.DateTimeField(
         verbose_name="Дата создания",
@@ -103,4 +115,24 @@ class User(AbstractUser):
         ordering = ["-pk"]
 
     def __str__(self):
-        return f"{self.name} {self.pk}"
+        return f"Пользователь {self.pk}"
+
+    @property
+    def wants_to_learn_subcategories(self):
+        """Подкатегории, в которых пользователь хочет научиться."""
+        return self.wants_to_learn.select_related("subcategory").all()
+
+    def get_age(self) -> int | None:
+        """
+        Возвращает возраст пользователя в полных годах.
+
+        Если дата рождения не указана — возвращает None.
+        """
+        if not self.date_of_birth:
+            return None
+        today = date.today()
+        birth_date = self.date_of_birth
+        age = today.year - birth_date.year
+        if today.month < birth_date.month or (today.month == birth_date.month and today.day < birth_date.day):
+            age -= 1
+        return age

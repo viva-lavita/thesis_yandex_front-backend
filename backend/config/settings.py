@@ -62,6 +62,7 @@ INSTALLED_APPS += [
 INSTALLED_APPS += [
     "api.apps.ApiConfig",
     "users.apps.UsersConfig",
+    "skills.apps.SkillsConfig",
 ]
 
 MIDDLEWARE = [
@@ -282,7 +283,7 @@ SIMPLE_JWT = {
 #  SWAGGER
 ########################
 SPECTACULAR_SETTINGS = {
-    "TITLE": "API Media school",
+    "TITLE": "API v1",
     "DESCRIPTION": "v1",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
