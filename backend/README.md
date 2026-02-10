@@ -95,45 +95,6 @@ docker compose up
 
 Обратите внимание, .env файл на сервере создается заново, после каждого деплоя. Значение переменных для файла берется из Secrets репозитория. Необходимо ознакомиться со списком необходимых переменных в скрипте и создать эти переменные в Settings -> Secrets and variables -> Actions -> New repository secret.
 
-### Перевод
-
-Использование:
-
-```python
-from django.utils.translation import gettext_lazy as _
-
-
-class User(AbstractUser):
-    email = models.EmailField(
-        verbose_name='Email',
-        max_length=254,
-        unique=True,
-        help_text=_(
-            "Required. 254 characters or fewer. "
-            "Letters, digits and @/./+/-/_ only."
-        ),
-        error_messages={
-            "unique": _("A user with that email already exists."),
-        },
-    )
-```
-
-Для формирования файла перевода на русском используйте [команду](https://docs.djangoproject.com/en/5.2/ref/django-admin/#django-admin-makemessages):
-
-```bash
-django-admin makemessages --locale=ru
-```
-
-В файле backend/locale/ru/LC_MESSAGES/django.po пропишите переводы помеченных фраз и скомпилируйте итоговый .mo файл:
-
-```bash
-python manage.py compilemessages -l ru
-```
-
-Локаль меняется в settings.py в разделе INTERNATIONALIZATION. [Документация](https://docs.djangoproject.com/en/4.2/topics/i18n/)
-
-Данный функционал добавлен только для однообразности отображения модели юзера в админке, т.к. часть полей этой модели определено самим django именно в таком стиле.
-
 # Порядок запуска
 
 ## Запуск проекта локально
@@ -165,12 +126,6 @@ python manage.py compilemessages -l ru
 
     ```bash
     python manage.py createsuperuser
-    ```
-
-7. Компилируем файл перевода:
-
-    ```bash
-    python manage.py compilemessages -l ru
     ```
 
 Проект готов к старту!

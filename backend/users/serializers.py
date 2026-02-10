@@ -16,6 +16,13 @@ class CitySerializer(serializers.ModelSerializer):
         fields = ["id", "name"]
 
 
+class CityListSerializer(serializers.Serializer):
+    cities = CitySerializer(many=True)
+
+    class Meta:
+        fields = ["cities"]
+
+
 class UserSerializer(DjoserUserSerializer):
     """
     Базовый сериализатор пользователя для всех action кроме 'create'.
@@ -93,27 +100,6 @@ class UserCreateSerializer(DjoserUserCreateSerializer):
         if self.instance and self.instance.date_of_birth and value > self.instance.date_of_birth:
             raise serializers.ValidationError("Дата рождения должна быть раньше даты регистрации")
         return value
-
-    # def validate_wants_to_learn(self, value):
-    #     if isinstance(value, str):
-    #         try:
-    #             data = json.loads(value)
-    #             # Проверяем, что это список
-    #             if not isinstance(data, list):
-    #                 raise serializers.ValidationError("wants_to_learn должен быть списком")
-    #             return data
-    #         except json.JSONDecodeError:
-    #             raise serializers.ValidationError("Некорректный JSON в wants_to_learn")
-    #     return value  # если уже список (например, из теста)
-
-    # def validate(self, attrs):
-    #     print(attrs)
-    #     # wants_to_learn = attrs.pop("wants_to_learn")
-    #     wants_to_learn = attrs.pop("wants_to_learn", None)
-    #     if wants_to_learn:
-    #         for want in wants_to_learn:
-    #             WantsToLearn(user=self.instance, subcategory=want["subcategory"]).save()
-    #     return super().validate(attrs)
 
 
 class ShortReadUserSerializer(serializers.ModelSerializer):

@@ -26,6 +26,13 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class CategoryListSerializer(serializers.Serializer):
+    categories = CategorySerializer(many=True)
+
+    class Meta:
+        fields = ["categories"]
+
+
 class SubCategorySerializer(serializers.ModelSerializer):
     """Сериализатор подкатегории навыков."""
 
@@ -34,6 +41,13 @@ class SubCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = SubCategory
         fields = ["id", "name", "category"]
+
+
+class SubCategoryListSerializer(serializers.Serializer):
+    subcategories = SubCategorySerializer(many=True)
+
+    class Meta:
+        fields = ["subcategories"]
 
 
 class SkillImageSerializer(serializers.ModelSerializer):
@@ -183,13 +197,12 @@ class SkillLikeSerializer(serializers.ModelSerializer):
 
 class SkillExchangeNotificationSerializer(serializers.ModelSerializer):
     request_id = serializers.IntegerField(source="request.id", read_only=True)
-    requester_name = serializers.CharField(source="request.requester.get_full_name", read_only=True)
     recipient_name = serializers.CharField(source="request.recipient.get_full_name", read_only=True)
 
     class Meta:
         model = SkillExchangeNotification
-        fields = ["id", "request_id", "requester_name", "recipient_name", "event_type", "is_read", "created_at"]
-        read_only_fields = ["created_at", "request_id", "requester_name", "recipient_name", "event_type", "is_read"]
+        fields = ["id", "request_id", "recipient_name", "event_type", "is_read", "created_at"]
+        read_only_fields = ["created_at", "request_id", "recipient_name", "event_type", "is_read"]
 
 
 class UserFullSerializer(ShortReadUserSerializer):

@@ -17,6 +17,7 @@ from skills.models import (
     WantsToLearn,
 )
 from skills.serializers import (
+    CategoryListSerializer,
     CategorySerializer,
     ShortSkillSerializer,
     SkillExchangeNotificationSerializer,
@@ -26,6 +27,7 @@ from skills.serializers import (
     SkillLikeCreateSerializer,
     SkillLikeSerializer,
     SkillSerializer,
+    SubCategoryListSerializer,
     SubCategorySerializer,
     UserFullSerializer,
     WantsToLearnSerializer,
@@ -44,6 +46,17 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (permissions.AllowAny,)
+    pagination_class = None
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            self.serializer_class = CategoryListSerializer
+        return super().get_serializer_class()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer({"categories": queryset})
+        return Response(serializer.data)
 
 
 class SubCategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -56,6 +69,17 @@ class SubCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = SubCategory.objects.all()
     serializer_class = SubCategorySerializer
     permission_classes = (permissions.AllowAny,)
+    pagination_class = None
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            self.serializer_class = SubCategoryListSerializer
+        return super().get_serializer_class()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer({"subcategories": queryset})
+        return Response(serializer.data)
 
 
 class SkillViewSet(viewsets.ModelViewSet):
@@ -113,9 +137,10 @@ class SkillViewSet(viewsets.ModelViewSet):
                 "skills__images",
             )
         )
-
-        data = UserFullSerializer(users, many=True, context={"request": request}).data
-        return Response(data, status=status.HTTP_200_OK)
+        page = self.paginate_queryset(users)
+        if page is not None:
+            serializer = UserFullSerializer(page, many=True, context={"request": request})
+            return self.get_paginated_response(serializer.data)
 
 
 class WantsToLearnViewSet(CreateDestroyViewSet):

@@ -9,12 +9,23 @@ from rest_framework.response import Response
 
 from skills.models import WantsToLearn
 from users.models import City
-from users.serializers import CitySerializer, UserCreateSerializer
+from users.serializers import CityListSerializer, CitySerializer, UserCreateSerializer
 
 
 class CityViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = City.objects.all()
     serializer_class = CitySerializer
+    pagination_class = None
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            self.serializer_class = CityListSerializer
+        return super().get_serializer_class()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer({"cities": queryset})
+        return Response(serializer.data)
 
 
 class UserViewSet(DjoserUserViewSet):
