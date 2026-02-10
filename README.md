@@ -9,11 +9,6 @@
 [![gunicorn](https://img.shields.io/badge/-gunicorn-464646?style=flat-square&logo=gunicorn)](https://gunicorn.org)
 [![Nginx](https://img.shields.io/badge/-NGINX-464646?style=flat-square&logo=NGINX)](https://nginx.org/ru)
 
-# drf-jwt_template
-
-Шаблон для нового проекта Django с JWT аутентификацией. Django 5 версии.
-Для использования этого шаблона в собственном проекте используйте кнопку `Use this template` в правом верхнем углу экрана.
-
 ---
 
 >Инструкции по бэкэнд части в README.md папки backend.
